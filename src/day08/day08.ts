@@ -34,6 +34,39 @@ function getSortedDistances(positions: number[][]) {
   }
   return distances.sort((d, d1) => d.distance - d1.distance);
 }
+
+function findAndMerge(
+  posToCircuit: Map<number, string>,
+  circuitMap: Map<string, number[]>,
+  pos1: number,
+  pos2: number
+) {
+  const pos1Circuit = posToCircuit.get(pos1);
+  const pos2Circuit = posToCircuit.get(pos2);
+  const circuitsInPos1 = pos1Circuit ? [...circuitMap.get(pos1Circuit)] : [];
+  const circuitsInPos2 = pos2Circuit ? [...circuitMap.get(pos2Circuit)] : [];
+  if (!pos1Circuit && !pos2Circuit) {
+    const newCircuitKey = randomUUID();
+    posToCircuit.set(pos1, newCircuitKey);
+    posToCircuit.set(pos2, newCircuitKey);
+    circuitMap.set(newCircuitKey, [pos1, pos2]);
+  } else if (pos1Circuit && !pos2Circuit) {
+    posToCircuit.set(pos2, pos1Circuit);
+    circuitMap.set(pos1Circuit, [...circuitsInPos1, pos2]);
+  } else if (pos2Circuit && !pos1Circuit) {
+    posToCircuit.set(pos1, pos2Circuit);
+    circuitMap.set(pos2Circuit, [...circuitsInPos2, pos1]);
+  } else if (pos1Circuit === pos2Circuit) {
+    // do nothing since they're in a circuit already
+  } else if (pos1Circuit && pos2Circuit) {
+    // merge the circuits to pos1
+    for (const circuit of circuitsInPos2) {
+      posToCircuit.set(circuit, pos1Circuit);
+    }
+    circuitMap.set(pos1Circuit, [...circuitsInPos1, ...circuitsInPos2]);
+    circuitMap.delete(pos2Circuit);
+  }
+}
 // this will return a map where the key is an id for the circuit
 // and the value is all the indexes in position that are in the same circuit
 function getCircuits(
@@ -43,33 +76,8 @@ function getCircuits(
   const posToCircuit: Map<number, string> = new Map();
   const circuitMap: Map<string, number[]> = new Map();
   for (let i = 0; i < numPairs; i++) {
-    const { distance, pos1, pos2 } = sortedDistances[i];
-    const pos1Circuit = posToCircuit.get(pos1);
-    const pos2Circuit = posToCircuit.get(pos2);
-    const circuitsInPos1 = pos1Circuit ? [...circuitMap.get(pos1Circuit)] : [];
-    const circuitsInPos2 = pos2Circuit ? [...circuitMap.get(pos2Circuit)] : [];
-    if (!pos1Circuit && !pos2Circuit) {
-      const newCircuitKey = randomUUID();
-      posToCircuit.set(pos1, newCircuitKey);
-      posToCircuit.set(pos2, newCircuitKey);
-      circuitMap.set(newCircuitKey, [pos1, pos2]);
-    } else if (pos1Circuit && !pos2Circuit) {
-      posToCircuit.set(pos2, pos1Circuit);
-      circuitMap.set(pos1Circuit, [...circuitsInPos1, pos2]);
-    } else if (pos2Circuit && !pos1Circuit) {
-      posToCircuit.set(pos1, pos2Circuit);
-      circuitMap.set(pos2Circuit, [...circuitsInPos2, pos1]);
-    } else if (pos1Circuit === pos2Circuit) {
-      // do nothing since they're in a circuit already
-      continue;
-    } else if (pos1Circuit && pos2Circuit) {
-      // merge the circuits to pos1
-      for (const circuit of circuitsInPos2) {
-        posToCircuit.set(circuit, pos1Circuit);
-      }
-      circuitMap.set(pos1Circuit, [...circuitsInPos1, ...circuitsInPos2]);
-      circuitMap.delete(pos2Circuit);
-    }
+    const { pos1, pos2 } = sortedDistances[i];
+    findAndMerge(posToCircuit, circuitMap, pos1, pos2);
   }
   return circuitMap;
 }
@@ -88,4 +96,29 @@ function getPart1(numPairs: number) {
   );
 }
 
+function getPart2() {
+  const input = readInput();
+  const sortedDistances = getSortedDistances(input);
+  const posToCircuit: Map<number, string> = new Map();
+  const circuitMap: Map<string, number[]> = new Map();
+  let i = 0;
+  let lastPosConnected;
+  let lastPosConnected2;
+  while (true) {
+    // stop when we have exactly one circuit of full size
+    if (circuitMap.size === 1) {
+      const only = Array.from(circuitMap.values())[0];
+      if (only.length === input.length) break;
+    }
+
+    const { pos1, pos2 } = sortedDistances[i];
+    lastPosConnected = pos1;
+    lastPosConnected2 = pos2;
+    findAndMerge(posToCircuit, circuitMap, pos1, pos2);
+    i++;
+  }
+  return input[lastPosConnected][0] * input[lastPosConnected2][0];
+}
+
 console.log("Part 1: ", getPart1(1000));
+console.log("Part 2: ", getPart2());
