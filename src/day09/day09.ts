@@ -130,7 +130,6 @@ function isAllEnclosingRedOrGreen(
   const maxX = Math.max(coord1[0], coord2[0]);
   const minY = Math.min(coord1[1], coord2[1]);
   const maxY = Math.max(coord1[1], coord2[1]);
-  // console.log("Checking area", (maxX - minX) * (maxY - minY));
   // top edge
   for (let i = minY; i <= maxY; i++) {
     if (getIndex(grid, maxX, i) === EMPTY_CELL) {
@@ -155,21 +154,12 @@ function isAllEnclosingRedOrGreen(
       return false;
     }
   }
-  // for (let i = minY; i <= maxY; i++) {
-  //   for (let j = minX; j <= maxX; j++) {
-  //     if (getIndex(grid, j, i) === EMPTY_CELL) {
-  //       return false;
-  //     }
-  //   }
-  // }
   return true;
 }
 function getGreatestAreaPart2(grid: Grid, coords: number[][]) {
   let maxArea = 0;
   for (let i = 0; i < coords.length; i++) {
-    console.log("progress x", i, coords.length - 1, coords[i]);
     for (let j = i + 1; j < coords.length; j++) {
-      // console.log("progress y", j, coords.length - 1, coords[j]);
       if (isAllEnclosingRedOrGreen(grid, coords[i], coords[j])) {
         const [x1, y1] = coords[i];
         const [x2, y2] = coords[j];
@@ -197,14 +187,8 @@ function printGrid(grid: Grid) {
 }
 function getPart2() {
   const { grid, coords } = getGrid();
-  console.log("permieter");
-  // printGrid(grid);
-  console.log("scanned grid");
   const filledInGrid = scanAndFillShape(grid);
-  console.log("completed fill in grid");
-  // console.log(printGrid(filledInGrid));
   return getGreatestAreaPart2(filledInGrid, coords);
-  // scan and fill in the coordinates within the perimeter
 }
 console.log("Part 1: ", getLargestArea());
 console.log("Part 2: ", getPart2());
